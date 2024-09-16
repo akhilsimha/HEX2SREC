@@ -84,7 +84,7 @@ def about_app():
 # Create main window
 root = tk.Tk()
 root.title("HEX2SREC")
-root.iconbitmap("Logo.ico")
+root.iconbitmap("LogoPSD.ico")
 root.geometry("800x600")
 
 # Apply ttk style for modern look

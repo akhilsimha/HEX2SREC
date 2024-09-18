@@ -1,6 +1,6 @@
 import subprocess
 import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext, ttk
+from tkinter import filedialog, messagebox, ttk
 
 def convert_hex_to_srec(hex_file, srec_file):
     try:
@@ -43,7 +43,6 @@ def browse_and_open_srec_file():
                 for line_number, line in enumerate(srec_data, start=1):
                     cleaned_line = line.strip()
                     checksum = calculate_checksum(cleaned_line)
-                    # Insert data into the table with editable "Data" column
                     checksum_table.insert('', 'end', values=(line_number, cleaned_line, checksum))
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open file: {e}")
@@ -54,15 +53,12 @@ def calculate_checksum(srec_line):
     The checksum is the least significant byte of the ones' complement of the sum of the byte count, address, and data fields.
     """
     try:
-        # Remove the 'S' character and the record type (1 character)
-        srec_data = srec_line[2:]  # Exclude the 'S' and record type (e.g., 'S1', 'S2', etc.)
+        srec_data = srec_line[2:]  # Exclude the 'S' and record type
 
-        # Convert each 2-character hex byte in the remaining string to an integer and sum them
         byte_values = [int(srec_data[i:i+2], 16) for i in range(0, len(srec_data) - 2, 2)]  # Exclude the last 2 chars (checksum)
 
         total_sum = sum(byte_values)
 
-        # Calculate checksum: ones' complement of the least significant byte of the sum
         checksum = 0xFF - (total_sum & 0xFF)
 
         return f"0x{checksum:02X}"
@@ -75,39 +71,45 @@ def show_conversion_frame():
 def show_srec_viewer_frame():
     srec_viewer_frame.tkraise()
 
+def show_checksum_frame():
+    checksum_frame.tkraise()
+
 def close_app():
     root.quit()
 
 def about_app():
     messagebox.showinfo("About", "HEX2SREC Converter\nVersion 1.0\nPowered by SRecord tool\nAuthor: Akhil Simha Neela (github.com/akhilsimha)")
 
+# Function for calculating checksum for single SREC line
+def calculate_single_checksum():
+    srec_line = single_srec_entry.get()
+    if not srec_line.startswith('S'):
+        messagebox.showerror("Error", "Invalid SREC line. It should start with 'S'.")
+        return
+    checksum = calculate_checksum(srec_line)
+    checksum_result_label.config(text=f"Calculated Checksum: {checksum}")
+
 # Create main window
 root = tk.Tk()
 root.title("HEX2SREC")
-root.iconbitmap("LogoPSD.ico")
+root.iconbitmap("Logo.ico")
 root.geometry("800x600")
 
 # Apply ttk style for modern look
-# style = ttk.Style()
-# style.configure("TButton", padding=6, relief="flat", background="#2e86c1", foreground="white", font=('Arial', 12))
-
-# Style definition for dark theme and custom button
 style = ttk.Style()
 
-
-# Set the theme for ttk widgets
 style.theme_use('clam')  # You can use "clam" for customizable styling
-
 
 # Menu bar
 menu_bar = tk.Menu(root)
 
 # File menu
 file_menu = tk.Menu(menu_bar, tearoff=0)
-file_menu.add_command(label="SREC Converter", command=show_conversion_frame)  # Option to go back to the converter
-file_menu.add_command(label="SREC Viewer", command=show_srec_viewer_frame)  # Add option to open S19 viewer
-file_menu.add_separator()  # Adds a line separator
-file_menu.add_command(label="Close", command=close_app)
+file_menu.add_command(label="SREC Converter", command=show_conversion_frame)  
+file_menu.add_command(label="SREC Viewer", command=show_srec_viewer_frame)
+file_menu.add_command(label="Checksum Calculator", command=show_checksum_frame)  # New option for checksum calculation
+file_menu.add_separator()  
+file_menu.add_command(label="Quit", command=close_app)
 menu_bar.add_cascade(label="File", menu=file_menu)
 
 # About menu
@@ -115,10 +117,8 @@ about_menu = tk.Menu(menu_bar, tearoff=0)
 about_menu.add_command(label="About", command=about_app)
 menu_bar.add_cascade(label="About", menu=about_menu)
 
-# Set the menu to the window
 root.config(menu=menu_bar)
 
-# Configure weight to allow expansion and resizing of widgets
 root.grid_rowconfigure(0, weight=1)
 root.grid_columnconfigure(0, weight=1)
 
@@ -143,7 +143,6 @@ srec_file_entry = ttk.Entry(conversion_frame)
 srec_file_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 ttk.Button(conversion_frame, text="Browse", command=browse_srec_file).grid(row=1, column=2, padx=10, pady=10)
 
-# Convert button
 ttk.Button(conversion_frame, text="Convert", command=start_conversion).grid(row=2, column=1, pady=20)
 
 # Frame for SREC Viewer
@@ -153,34 +152,42 @@ srec_viewer_frame.grid(row=0, column=0, sticky="nsew")
 srec_viewer_frame.grid_rowconfigure(1, weight=1)
 srec_viewer_frame.grid_columnconfigure(0, weight=1)
 
-# SREC Viewer table
 ttk.Label(srec_viewer_frame, text="Open and View SREC File:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
 ttk.Button(srec_viewer_frame, text="Open SREC File", command=browse_and_open_srec_file).grid(row=0, column=1, padx=10, pady=10)
 
-# Table to display Line No., Data, and Calculated Checksum
 checksum_table_frame = ttk.Frame(srec_viewer_frame)
 checksum_table_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
-# Create the table widget
 columns = ('Line No.', 'Data', 'Calculated Checksum')
 checksum_table = ttk.Treeview(checksum_table_frame, columns=columns, show='headings', height=15)
 
-# Define column headings
 checksum_table.heading('Line No.', text='Line No.')
 checksum_table.heading('Data', text='Data')
 checksum_table.heading('Calculated Checksum', text='Calculated Checksum')
 
-# Set column widths
 checksum_table.column('Line No.', width=100, anchor='center')
 checksum_table.column('Data', width=500, anchor='w')
 checksum_table.column('Calculated Checksum', width=150, anchor='center')
 
-# Add vertical scrollbar for the checksum table
 scrollbar = ttk.Scrollbar(checksum_table_frame, orient='vertical', command=checksum_table.yview)
 checksum_table.configure(yscrollcommand=scrollbar.set)
 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-# Pack the table
 checksum_table.pack(fill=tk.BOTH, expand=True)
+
+# Frame for Single Line Checksum Calculation
+checksum_frame = ttk.Frame(root, padding=(10, 10, 10, 10))
+checksum_frame.grid(row=0, column=0, sticky="nsew")
+
+checksum_frame.grid_columnconfigure(1, weight=1)
+
+ttk.Label(checksum_frame, text="Enter or Paste SREC Line:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+single_srec_entry = ttk.Entry(checksum_frame)
+single_srec_entry.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+
+ttk.Button(checksum_frame, text="Calculate Checksum", command=calculate_single_checksum).grid(row=1, column=1, padx=10, pady=10)
+
+checksum_result_label = ttk.Label(checksum_frame, text="Calculated Checksum: ")
+checksum_result_label.grid(row=2, column=1, padx=10, pady=10)
 
 root.mainloop()

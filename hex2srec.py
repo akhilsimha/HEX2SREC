@@ -14,15 +14,39 @@ def convert_hex_to_srec(hex_file, srec_file):
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
+
+def convert_srec_to_hex(srec_file, hex_file):
+    try:
+        result = subprocess.run(["srec_cat", srec_file, "-Motorola", "-o", hex_file, "-Intel"],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        if result.returncode == 0:
+            messagebox.showinfo("Success", f"Successfully converted {srec_file} to {hex_file}")
+        else:
+            messagebox.showerror("Error", f"Error: {result.stderr}")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+
 def browse_hex_file():
     file_path = filedialog.askopenfilename(title="Select HEX file", filetypes=[("HEX files", "*.hex")])
     hex_file_entry.delete(0, tk.END)
     hex_file_entry.insert(0, file_path)
 
+def save_hex_file():
+    file_path = filedialog.asksaveasfilename(title="Save as HEX file", defaultextension=".hex", filetypes=[("HEX files", "*.hex")])
+    hex_file_entry.delete(0, tk.END)
+    hex_file_entry.insert(0, file_path)
+
 def browse_srec_file():
+    file_path = filedialog.askopenfilename(title="Select SREC file", filetypes=[("SREC files", "*.s19")])
+    srec_file_entry.delete(0, tk.END)
+    srec_file_entry.insert(0, file_path)
+
+def save_srec_file():
     file_path = filedialog.asksaveasfilename(title="Save as SREC file", defaultextension=".s19", filetypes=[("SREC files", "*.s19")])
     srec_file_entry.delete(0, tk.END)
     srec_file_entry.insert(0, file_path)
+
 
 def start_conversion():
     hex_file = hex_file_entry.get()
@@ -31,6 +55,16 @@ def start_conversion():
         messagebox.showwarning("Input error", "Please select both HEX and SREC file paths.")
     else:
         convert_hex_to_srec(hex_file, srec_file)
+
+def start_conversion2():
+    hex_file = hex_file_entry.get()
+    srec_file = srec_file_entry.get()
+    if not hex_file or not srec_file:
+        messagebox.showwarning("Input error", "Please select both HEX and SREC file paths.")
+    else:
+        convert_srec_to_hex(srec_file, hex_file)
+
+        
 
 def browse_and_open_srec_file():
     file_path = filedialog.askopenfilename(title="Open SREC file", filetypes=[("SREC files", "*.s19")])
@@ -132,18 +166,32 @@ conversion_frame.grid_rowconfigure(2, weight=1)
 conversion_frame.grid_columnconfigure(1, weight=1)
 
 # HEX file selection
-ttk.Label(conversion_frame, text="Select HEX File:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+ttk.Label(conversion_frame, text="Select HEX File:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
 hex_file_entry = ttk.Entry(conversion_frame)
 hex_file_entry.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
-ttk.Button(conversion_frame, text="Browse", command=browse_hex_file).grid(row=0, column=2, padx=10, pady=10)
+ttk.Button(conversion_frame, text="Browse", command=browse_hex_file).grid(row=0, column=2, padx=5, pady=10)
 
 # SREC file selection
-ttk.Label(conversion_frame, text="Select Output SREC File:").grid(row=1, column=0, padx=10, pady=10, sticky="w")
+ttk.Label(conversion_frame, text="Select Output SREC File:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
 srec_file_entry = ttk.Entry(conversion_frame)
 srec_file_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
-ttk.Button(conversion_frame, text="Browse", command=browse_srec_file).grid(row=1, column=2, padx=10, pady=10)
+ttk.Button(conversion_frame, text="Browse", command=browse_srec_file).grid(row=1, column=2, padx=5, pady=10)
 
 ttk.Button(conversion_frame, text="Convert", command=start_conversion).grid(row=2, column=1, pady=20)
+
+# SREC file selection
+ttk.Label(conversion_frame, text="Select SREC File:").grid(row=3, column=0, padx=10, pady=5, sticky="w")
+srec_file_entry = ttk.Entry(conversion_frame)
+srec_file_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
+ttk.Button(conversion_frame, text="Browse", command=browse_srec_file).grid(row=3, column=2, padx=5, pady=10)
+
+# HEX file selection
+ttk.Label(conversion_frame, text="Select Output HEX File:").grid(row=4, column=0, padx=10, pady=5, sticky="w")
+hex_file_entry = ttk.Entry(conversion_frame)
+hex_file_entry.grid(row=4, column=1, padx=10, pady=10, sticky="ew")
+ttk.Button(conversion_frame, text="Browse", command=save_hex_file).grid(row=4, column=2, padx=5, pady=10)
+
+ttk.Button(conversion_frame, text="Convert", command=start_conversion2).grid(row=5, column=1, pady=20)
 
 # Frame for SREC Viewer
 srec_viewer_frame = ttk.Frame(root)
